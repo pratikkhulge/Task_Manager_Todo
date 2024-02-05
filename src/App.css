@@ -1,0 +1,41 @@
+/* For Log In */
+.loginMainDiv {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.card {
+  margin-top: calc(5% + 10px);
+  min-width: 50vw;
+  min-height: 20vw;
+  border-radius: 10px;
+}
+
+.card-content.blue {
+  /* border-radius: 10px; */
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+}
+
+.placeholder {
+  margin-top: 30vh;
+  color: red;
+}
+
+.signupMainDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.transparent-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+
+.blue-text {
+  color: blue;
+}
