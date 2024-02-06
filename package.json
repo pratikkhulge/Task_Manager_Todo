@@ -2,7 +2,6 @@
   "name": "react_assignment_3",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://nomangul.github.io/React-Admin",
   "dependencies": {
     "firebase": "^10.8.0",
     "react": "^16.4.2",
