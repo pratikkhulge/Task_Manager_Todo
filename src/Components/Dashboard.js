@@ -1,12 +1,11 @@
-import React, { Component } from "react";
-// import logo from './logo.svg';
+import React from "react";
 import "../App.css";
 
 const Dashboard = (props) => {
   return (
     <div>
       <div className="container">
-        <h1 className="center">To-Do List</h1>
+        <h1 className="center">Task Manager</h1>
         {props.taskCreator}
       </div>
       <div className="fixed-action-btn">
