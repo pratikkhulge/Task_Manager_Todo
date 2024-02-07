@@ -165,7 +165,6 @@ const App = () => {
     }
   };
   
-
   const deleteFunc = (TaskKey) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this Task?");
     if (confirmDelete) {
