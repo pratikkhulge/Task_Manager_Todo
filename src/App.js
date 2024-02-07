@@ -1,5 +1,4 @@
-
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import SignUp from "./Components/Signup";
 import Login from "./Components/Login";
@@ -11,61 +10,60 @@ import Navbar from "./Components/Navbar";
 import { getDatabase, ref, push, onValue, remove, set } from 'firebase/database';
 import { auth } from './firebase';
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      login: !!localStorage.getItem('uid'),
-      isSignUp: true,
-      tasksObj: [],
-      userName: null,
-      title: '',
-      description: '',
-      priority: '',
-      date: ''
-    };
-  }
+const App = () => {
+  const [login, setLogin] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(true);
+  const [tasksObj, setTasksObj] = useState([]);
+  const [userName, setUserName] = useState(null);
+  const [formState, setFormState] = useState({
+    title: '',
+    description: '',
+    priority: '',
+    date: ''
+  });
 
-  componentDidMount() {
-    const { login } = this.state;
-    if (login) {
-      const uid = localStorage.getItem('uid');
-      this.fetchUserData(uid);
-    }
+  useEffect(() => {
+    auth.signOut();
+    setLogin(false);
+    setIsSignUp(true);
     auth.onAuthStateChanged((user) => {
       if (user) {
-        this.fetchUserData(user.uid);
-        this.setState({ login: true, userName: user.displayName });
+        fetchUserData(user.uid);
+        setLogin(true);
+        setUserName(user.displayName);
       } else {
-        this.setState({ login: false, userName: null, tasksObj: [] });
+        setLogin(false);
+        setUserName(null);
+        setTasksObj([]);
       }
     });
-  }
+  }, []);
 
-  fetchUserData(uid) {
+  const fetchUserData = (uid) => {
     const db = getDatabase();
     const userRef = ref(db, `Tasks/${uid}`);
     onValue(userRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const TasksArray = Object.keys(data).map(key => ({ key: key, ...data[key] }));
-        this.setState({ tasksObj: TasksArray });
+        setTasksObj(TasksArray);
       } else {
-        this.setState({ tasksObj: [] });
+        setTasksObj([]);
       }
     });
-  }
+  };
 
-  loginHandler = async (e) => {
+  const loginHandler = async (e) => {
     e.preventDefault();
     try {
-      const emailVal = this.emailVal.value;
-      const passVal = this.passVal.value;
+      const emailVal = e.target.emailVal.value;
+      const passVal = e.target.passVal.value;
       signInWithEmailAndPassword(auth, emailVal, passVal)
         .then((userCredential) => {
           const user = userCredential.user;
-          this.setState({ login: true, userName: user.displayName });
-          localStorage.setItem('uid', user.uid);
+          setLogin(true);
+          setUserName(user.displayName);
+          swal("Success", `Welcome, ${user.displayName}! You have successfully logged in.`, "success");
         })
         .catch((error) => {
           const errorMessage = error.message;
@@ -81,19 +79,21 @@ class App extends Component {
     }
   };
 
-  signupHandler = async (e) => {
+  const signupHandler = async (e) => {
     e.preventDefault();
     try {
-      const emailVal = this.emailVal.value;
-      const passVal = this.passVal.value;
-      const nameVal = this.nameVal.value;
+      const emailVal = e.target.emailVal.value;
+      const passVal = e.target.passVal.value;
+      const nameVal = e.target.nameVal.value;
       createUserWithEmailAndPassword(auth, emailVal, passVal)
         .then((userCredential) => {
           const user = userCredential.user;
           updateProfile(auth.currentUser, {
             displayName: nameVal
           });
-          this.setState({ login: false, isSignUp: false });
+          swal("Success", `Welcome, ${nameVal}! You have successfully registered.`, "success");
+          setLogin(false);
+          setIsSignUp(false);
         })
         .catch((error) => {
           const errorMessage = error.message;
@@ -109,72 +109,27 @@ class App extends Component {
     }
   };
 
-  toggleForm = () => {
-    this.setState(prevState => ({
-      isSignUp: !prevState.isSignUp
-    }));
+  const toggleForm = () => {
+    setIsSignUp(!isSignUp);
   };
 
-  logoutHandler = () => {
+  const logoutHandler = () => {
     auth.signOut();
-    this.setState({ login: false });
+    setLogin(false);
   };
 
-  taskCreator = () => {
-    const { tasksObj } = this.state; // Assuming you have a tasksObj state containing task data
-    return tasksObj.map((task, index) => {
-      return (
-        <ul className="collection with-header hoverable z-depth-2" key={index}>
-          <li className="collection-header teal white-text">
-            <h4 className="center">
-              {task.title}
-            </h4>
-            <a
-              onClick={() => this.deleteFunc(task.key)} // Assuming task object has a key property
-              className="btn-floating waves-effect waves-light red right"
-            >
-              <i className="material-icons">delete</i>
-            </a>
-          </li>
-          <li className="collection-item">
-            <span>
-              <b>Description:</b> {task.description}
-            </span>
-          </li>
-          <li className="collection-item">
-            <span>
-              <b>Priority:</b> {task.priority}
-            </span>
-          </li>
-          <li className="collection-item">
-            <span>
-              <b>Date:</b> {task.date}
-            </span>
-          </li>
-        </ul>
-      );
-    });
-  };
-  
-  clearFormFields() {
-    this.setState({
+  const clearFormFields = () => {
+    setFormState({
       title: '',
       description: '',
       priority: '',
       date: ''
-    }, () => {
-      console.log('State updated:', this.state);
     });
-  }
-  
-  
-  addFunc() {
-    const title = this.title.value;
-    const description = this.description.value;
-    const priority = this.priority.value;
-    const date = this.date.value;
+  };
 
-    if (title && description && priority && date ) {
+  const addFunc = () => {
+    const { title, description, priority, date } = formState;
+    if (title && description && priority && date) {
       const user = auth.currentUser;
       if (user) {
         const uid = user.uid;
@@ -190,17 +145,28 @@ class App extends Component {
         set(newTaskRef, newTaskObj)
           .then(() => {
             console.log('Data pushed to Firebase Realtime Database successfully!');
-            this.clearFormFields();
+            setFormState(prevState => ({
+              ...prevState,
+              title: '',
+              description: '',
+              priority: '',
+              date: ''
+            }));
+            fetchUserData(uid);
           })
           .catch((error) => {
             console.error('Error pushing data to Firebase Realtime Database:', error);
           });
+      } else {
+        console.error('User not logged in');
       }
+    } else {
+      console.error('Please fill in all fields');
     }
-  }
+  };
   
 
-  deleteFunc(TaskKey) {
+  const deleteFunc = (TaskKey) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this Task?");
     if (confirmDelete) {
       const user = auth.currentUser;
@@ -219,61 +185,79 @@ class App extends Component {
         console.error('User not logged in');
       }
     }
-  }
+  };
 
-  placeHolder() {
+  const taskCreator = () => {
+    return tasksObj.map((task, index) => (
+      <ul className="collection with-header hoverable z-depth-2" key={index}>
+        <li className="collection-header teal white-text">
+          <h4 className="center">{task.title}</h4>
+          <a
+            onClick={() => deleteFunc(task.key)}
+            className="btn-floating waves-effect waves-light red right"
+          >
+            <i className="material-icons">delete</i>
+          </a>
+        </li>
+        <li className="collection-item">
+          <span>
+            <b>Description:</b> {task.description}
+          </span>
+        </li>
+        <li className="collection-item">
+          <span>
+            <b>Priority:</b> {task.priority}
+          </span>
+        </li>
+        <li className="collection-item">
+          <span>
+            <b>Date:</b> {task.date}
+          </span>
+        </li>
+      </ul>
+    ));
+  };
+
+  const placeHolder = () => {
     return (
       <div>
         <h4 className="center placeholder">Please add tasks :(</h4>
       </div>
     );
-  }
+  };
 
-  render() {
-    const { login, isSignUp, tasksObj, userName } = this.state;
-    return (
-      <div>
-        {!login && isSignUp && (
-          <SignUp
-            signupHandler={e => this.signupHandler(e)}
-            signupCard={el => (this.signupCard = el)}
-            nameVal={el => (this.nameVal = el)}
-            emailVal={el => (this.emailVal = el)}
-            passVal={el => (this.passVal = el)}
-            switchToLogin={this.toggleForm}
-          />
-        )}
-
-        {!login && !isSignUp && (
-          <Login
-            loginHandler={e => this.loginHandler(e)}
-            loginCard={el => (this.loginCard = el)}
-            emailVal={el => (this.emailVal = el)}
-            passVal={el => (this.passVal = el)}
-            switchToSignUp={this.toggleForm}
-          />
-        )}
-
-        {login && <Navbar userName={userName} logoutHandler={this.logoutHandler} />}
-
-        {login && <Dashboard taskCreator={this.taskCreator()} />}
-
-        {login && tasksObj.length === 0 ? this.placeHolder() : ""}
-        <Form
-          addFunc={() => this.addFunc()}
-          cancelFunc={() => this.clearFormFields()}
-          title={el => (this.title = el)}
-          description={el => (this.description = el)}
-          priority={el => (this.priority = el)}
-          date={el => (this.date = el)}
+  return (
+    <div>
+      {!login && isSignUp && (
+        <SignUp
+          signupHandler={signupHandler}
+          switchToLogin={toggleForm}
         />
+      )}
 
-      </div>
-    );
-  }
-}
+      {!login && !isSignUp && (
+        <Login
+          loginHandler={loginHandler}
+          switchToSignUp={toggleForm}
+        />
+      )}
+
+      {login && (
+        <>
+          <Navbar userName={userName} logoutHandler={logoutHandler} />
+          <Dashboard taskCreator={taskCreator()} />
+          {tasksObj.length === 0 && placeHolder()}
+        </>
+      )}
+
+      <Form
+        addFunc={addFunc}
+        cancelFunc={clearFormFields}
+        formData={formState}
+        setFormData={setFormState}
+      />
+    </div>
+  );
+};
 
 export default App;
-
-
-
