@@ -1,4 +1,4 @@
-# React Todo App with Firebase Authentication and Real-time Database
+# React Task-Manager Todo App with Firebase Authentication and Real-time Database
 
 This is a simple todo application built with React.js and Firebase, allowing users to sign up and log in to manage their todo tasks. Each user has access only to their own todo tasks.
 
